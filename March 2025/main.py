@@ -9,6 +9,10 @@ mirrors = {
     (RIGHT, SLASH): UP, (RIGHT, BACKSLASH): DOWN
 }
 
+exec_count = 0
+
+known_lasers = {(0, 3): (9, DOWN), (4, 0): (16, RIGHT), (6, 3): (36, UP), (2, 6): (75, LEFT)}
+
 def print_grid(grid: list[list]) -> None:
     for row in range(1, len(grid) - 1):
         print("".join(str(c) for c in grid[row][1:-1]))
@@ -27,31 +31,26 @@ def follow_light_ray(grid: list[list], row: int, col: int, dir: tuple[int, int])
         return count * follow_light_ray(grid, row, col, mirrors[(dir, grid[row][col])])
     return count
 
+# Refacto done
 def calculate_lasers_lengths(grid: list[list]) -> int:
     sums = [0] * 4
     for col in range(1, COLS + 1):
-        if grid[0][col] == '.':
+        if (0, col) not in known_lasers:
             sums[0] += follow_light_ray(grid, 0, col, DOWN)
-        if grid[ROWS + 1][col] == '.':
+        if (ROWS + 1, col) not in known_lasers:
             sums[1] += follow_light_ray(grid, ROWS + 1, col, UP)
     for row in range(1, ROWS + 1):
-        if grid[row][0] == '.':
+        if (row, 0) not in known_lasers:
             sums[2] += follow_light_ray(grid, row, 0, RIGHT)
-        if grid[row][COLS + 1] == '.':
+        if (row, COLS + 1) not in known_lasers:
             sums[3] += follow_light_ray(grid, row, COLS + 1, LEFT)
 
     return sums[0] * sums[1] * sums[2] * sums[3]
 
+# Refacto done
 def check_known_lasers(grid: list[list]) -> bool:
-    for col in range(1, COLS + 1):
-        if grid[0][col] != '.' and not check_laser(grid, 0, col, DOWN):
-            return False
-        if grid[ROWS + 1][col] != '.' and not check_laser(grid, ROWS + 1, col, UP):
-            return False
-    for row in range(1, ROWS + 1):
-        if grid[row][0] != '.' and not check_laser(grid, row, 0, RIGHT):
-            return False
-        if grid[row][COLS + 1] != '.' and not check_laser(grid, row, COLS + 1, LEFT):
+    for laser in known_lasers:
+        if not check_laser(grid, laser[0], laser[1], known_lasers[laser][1]):
             return False
     return True
 
@@ -95,6 +94,16 @@ def solve(grid: list[list], row: int, col: int) -> None:
 
     grid[row][col] = 0
     return False
+
+def tests(grid: list[list[int]]) -> None:
+    # assert check_laser(grid, -1, 2, DOWN) == True
+    assert (ret := follow_light_ray(grid, 0, 2, DOWN)) == 9, f"Function returned {ret!r}"
+    assert (ret := follow_light_ray(grid, 1, 4, LEFT)) == 75, f"Function returned {ret!r}"
+
+    assert check_laser(grid, 2, 6, LEFT) == True
+
+    assert check_laser(grid, -1, 4, DOWN) == False
+
 
 def main():
     grid: list[list] = [
