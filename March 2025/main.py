@@ -1,4 +1,5 @@
-COLS, ROWS = 5, 5
+# COLS, ROWS = 5, 5
+COLS, ROWS = 10, 10
 UP, RIGHT, DOWN, LEFT = (-1, 0), (0, 1), (1, 0), (0, -1)
 SLASH, BACKSLASH = 1, 2 # 1 = /     2 = \
 
@@ -9,9 +10,6 @@ mirrors = {
     (RIGHT, SLASH): UP, (RIGHT, BACKSLASH): DOWN
 }
 
-exec_count = 0
-
-known_lasers = {(0, 3): (9, DOWN), (4, 0): (16, RIGHT), (6, 3): (36, UP), (2, 6): (75, LEFT)}
 
 def print_grid(grid: list[list]) -> None:
     for row in range(1, len(grid) - 1):
@@ -108,8 +106,8 @@ def tests(grid: list[list[int]]) -> None:
     assert check_laser(grid, 0, 3, DOWN) == True
     assert (ret := follow_light_ray(grid, 0, 3, DOWN)) == 9, f"Function returned {ret!r}"
 
-    assert check_laser(grid, 2, 6, LEFT) == True
     assert (ret := follow_light_ray(grid, 2, 6, LEFT)) == 75, f"Function returned {ret!r}"
+    assert check_laser(grid, 2, 6, LEFT) == True
 
     assert check_laser(grid, 0, 4, DOWN) == False
 
@@ -126,7 +124,7 @@ def tests(grid: list[list[int]]) -> None:
 
     print("-> Tests run successfully")
 
-def main():
+def get_test_map() -> list[list]:
     grid: list[list] = [
         ['.'] * (COLS + 2),
         ['.'] + [0] * COLS + ['.'],
@@ -141,7 +139,80 @@ def main():
     grid[6][3] = 36
     grid[2][6] = 75
 
-    tests(grid)
+    global known_lasers
+    known_lasers = {(0, 3): (9, DOWN), (4, 0): (16, RIGHT), (6, 3): (36, UP), (2, 6): (75, LEFT)}
+
+    return grid
+
+def get_real_map() -> list[list]:
+    grid: list[list] = [
+        ['.'] * (COLS + 2),
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],
+        ['.'] + [0] * COLS + ['.'],        
+        ['.'] * (COLS + 2)
+    ]
+    grid[0][3] = 112
+    grid[0][5] = 48
+    grid[0][6] = 3087
+    grid[0][7] = 9
+    grid[0][10] = 1
+
+    grid[2][11] = 4
+    grid[3][11] = 27
+    grid[7][11] = 16
+
+    grid[4][0] = 27
+    grid[8][0] = 12
+    grid[9][0] = 225
+
+    grid[11][1] = 2025
+    grid[11][4] = 12
+    grid[11][5] = 64
+    grid[11][6] = 5
+    grid[11][8] = 405
+
+    global known_lasers
+    known_lasers = {
+        (0, 3): (112, DOWN),
+        (0, 5): (48, DOWN),
+        (0, 6): (3087, DOWN),
+        (0, 7): (9, DOWN),
+        (0, 10): (1, DOWN),
+
+        (2, 11): (4, LEFT),
+        (3, 11): (27, LEFT),
+        (7, 11): (16, LEFT),
+
+        (4, 0): (27, RIGHT),
+        (8, 0): (12, RIGHT),
+        (9, 0): (225, RIGHT),
+
+        (11, 1): (2025, UP),
+        (11, 4): (12, UP),
+        (11, 5): (64, UP),
+        (11, 6): (5, UP),
+        (11, 8): (405, UP)
+    }
+
+    grid[1][10] = BACKSLASH
+    grid[10][6] = SLASH
+
+
+    return grid
+
+def main():
+    # grid = get_test_map()
+    grid = get_real_map()
+
+    # tests(grid)
 
     print(solve(grid, 1, 1))
     print_grid(grid)
