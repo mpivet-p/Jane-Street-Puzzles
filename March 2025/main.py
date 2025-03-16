@@ -22,10 +22,12 @@ def check_laser(grid: list[list], row: int, col: int, dir: tuple[int, int]) -> t
 
 def follow_light_ray(grid: list[list], row: int, col: int, dir: tuple[int, int]) -> int:
     count = 0
-    while count == 0 or grid[row][col] == 0:
+    while True:
         row += dir[0]
         col += dir[1]
         count += 1
+        if grid[row][col] != 0:
+            break
 
     if (row > 0 and row < ROWS + 1) and (col > 0 and col < COLS + 1):
         return count * follow_light_ray(grid, row, col, mirrors[(dir, grid[row][col])])
@@ -34,16 +36,15 @@ def follow_light_ray(grid: list[list], row: int, col: int, dir: tuple[int, int])
 # Refacto done
 def calculate_lasers_lengths(grid: list[list]) -> int:
     sums = [0] * 4
-    for col in range(1, COLS + 1):
-        if (0, col) not in known_lasers:
-            sums[0] += follow_light_ray(grid, 0, col, DOWN)
-        if (ROWS + 1, col) not in known_lasers:
-            sums[1] += follow_light_ray(grid, ROWS + 1, col, UP)
-    for row in range(1, ROWS + 1):
-        if (row, 0) not in known_lasers:
-            sums[2] += follow_light_ray(grid, row, 0, RIGHT)
-        if (row, COLS + 1) not in known_lasers:
-            sums[3] += follow_light_ray(grid, row, COLS + 1, LEFT)
+    for i in range(1, COLS + 1):
+        if (0, i) not in known_lasers:
+            sums[0] += follow_light_ray(grid, 0, i, DOWN)
+        if (ROWS + 1, i) not in known_lasers:
+            sums[1] += follow_light_ray(grid, ROWS + 1, i, UP)
+        if (i, 0) not in known_lasers:
+            sums[2] += follow_light_ray(grid, i, 0, RIGHT)
+        if (i, COLS + 1) not in known_lasers:
+            sums[3] += follow_light_ray(grid, i, COLS + 1, LEFT)
 
     return sums[0] * sums[1] * sums[2] * sums[3]
 
@@ -65,8 +66,8 @@ def can_place_mirror(grid: list[list], row: int, col: int) -> bool:
         return False
     return True
 
-def solve(grid: list[list], row: int, col: int) -> None:
-    if check_known_lasers(grid):
+def solve(grid: list[list], row: int, col: int, changed: bool = True) -> None:
+    if changed and check_known_lasers(grid):
         return True
     if row == ROWS and col == COLS:
         return False
@@ -78,7 +79,7 @@ def solve(grid: list[list], row: int, col: int) -> None:
         next_row = row
         next_col = col + 1
 
-    if solve(grid, next_row, next_col):
+    if solve(grid, next_row, next_col, changed=False):
         return True
 
     if not can_place_mirror(grid, row, col):
@@ -96,14 +97,34 @@ def solve(grid: list[list], row: int, col: int) -> None:
     return False
 
 def tests(grid: list[list[int]]) -> None:
-    # assert check_laser(grid, -1, 2, DOWN) == True
-    assert (ret := follow_light_ray(grid, 0, 2, DOWN)) == 9, f"Function returned {ret!r}"
-    assert (ret := follow_light_ray(grid, 1, 4, LEFT)) == 75, f"Function returned {ret!r}"
+    grid[1][2] = BACKSLASH
+    grid[1][5] = BACKSLASH
+    grid[2][1] = SLASH
+    grid[3][3] = SLASH
+    grid[3][5] = SLASH
+    grid[4][4] = SLASH
+    grid[5][1] = BACKSLASH
+
+    assert check_laser(grid, 0, 3, DOWN) == True
+    assert (ret := follow_light_ray(grid, 0, 3, DOWN)) == 9, f"Function returned {ret!r}"
 
     assert check_laser(grid, 2, 6, LEFT) == True
+    assert (ret := follow_light_ray(grid, 2, 6, LEFT)) == 75, f"Function returned {ret!r}"
 
-    assert check_laser(grid, -1, 4, DOWN) == False
+    assert check_laser(grid, 0, 4, DOWN) == False
 
+    assert check_known_lasers(grid) == True
+
+
+    grid[1][2] = 0
+    grid[1][5] = 0
+    grid[2][1] = 0
+    grid[3][3] = 0
+    grid[3][5] = 0
+    grid[4][4] = 0
+    grid[5][1] = 0
+
+    print("-> Tests run successfully")
 
 def main():
     grid: list[list] = [
@@ -120,28 +141,12 @@ def main():
     grid[6][3] = 36
     grid[2][6] = 75
 
-    # grid[1][2] = BACKSLASH
-    # grid[1][5] = BACKSLASH
-    # grid[2][1] = SLASH
-    # grid[3][3] = SLASH
-    # grid[3][5] = SLASH
-    # grid[4][4] = SLASH
-    # grid[5][1] = BACKSLASH
+    tests(grid)
 
-    print_grid(grid)
-    # print(check_laser(grid, 0, 3, DOWN))
-    # print(check_laser(grid, 2, 6, LEFT))
-    # # print(check_laser(grid, 0, 5, DOWN))
-    # print(follow_light_ray(grid, 6, 2, UP))
-    # print(calculate_lasers_lengths(grid))
-    # print(check_known_lasers(grid))
     print(solve(grid, 1, 1))
     print_grid(grid)
+
     print(calculate_lasers_lengths(grid))
-    print(check_known_lasers(grid))
-
-
-# Place all the mirrors for the known lasers and then just follow the distances
 
 if __name__ == "__main__":
     main()
