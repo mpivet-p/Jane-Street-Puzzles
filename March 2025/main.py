@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 # COLS, ROWS = 5, 5
 COLS, ROWS = 10, 10
 UP, RIGHT, DOWN, LEFT = (-1, 0), (0, 1), (1, 0), (0, -1)
@@ -10,10 +12,9 @@ mirrors = {
     (RIGHT, SLASH): UP, (RIGHT, BACKSLASH): DOWN
 }
 
-
 def print_grid(grid: list[list]) -> None:
     for row in range(1, len(grid) - 1):
-        print("".join(str(c) for c in grid[row][1:-1]))
+        print("".join(r"./\\"[c] for c in grid[row][1:-1]))
 
 def check_laser(grid: list[list], row: int, col: int, dir: tuple[int, int]) -> tuple[bool, tuple]:
     return follow_light_ray(grid, row, col, dir) == grid[row][col]
@@ -68,6 +69,8 @@ def solve(grid: list[list], row: int, col: int, changed: bool = True) -> None:
     if changed and check_known_lasers(grid):
         return True
     if row == ROWS and col == COLS:
+        print("====================================")
+        print_grid(grid)
         return False
     
     if col == COLS:
@@ -80,7 +83,7 @@ def solve(grid: list[list], row: int, col: int, changed: bool = True) -> None:
     if solve(grid, next_row, next_col, changed=False):
         return True
 
-    if not can_place_mirror(grid, row, col):
+    if grid[row][col] != 0 or not can_place_mirror(grid, row, col):
         return False
 
     grid[row][col] = SLASH
@@ -202,22 +205,113 @@ def get_real_map() -> list[list]:
         (11, 8): (405, UP)
     }
 
-    grid[1][10] = BACKSLASH
-    grid[10][6] = SLASH
+    # grid[1][10] = BACKSLASH # Laser v=1
+    # grid[8][4] = BACKSLASH # Laser v=12
+    # grid[10][6] = SLASH # Laser v=5
 
+    # grid[2][9] = BACKSLASH # Laser v=4
+
+    # # Laser v=9
+    # grid[1][7] = BACKSLASH
+    # grid[4][10] = BACKSLASH
+
+    # # Hypothesis
+    # grid[3][2] = BACKSLASH
+    # grid[4][3] = BACKSLASH
+    # grid[4][5] = BACKSLASH
 
     return grid
+
+def get_current_mirrors(grid: list[list]) -> list[tuple[int, int, int]]:
+    res: list[tuple[int, int, int]] = []
+
+    for r in range(1, ROWS + 1):
+        for c in range(1, COLS + 1):
+            if grid[r][c] != 0:
+                res.append((r, c, grid[r][c]))
+
+    return res
+
+def find_all_mirrors(grid: list[list], laser: tuple, row: int, col: int, dir: tuple[int, int], goal: int) -> None:
+    global count
+
+    if dir == DOWN or dir == UP:
+        generator = range(1, ROWS - row + 2) if dir == DOWN else range(-1 - row, 0)
+
+        for i in generator:
+            if goal % i != 0:
+                continue
+
+            if goal == abs(i) and (row + i == ROWS + 1 or row + i == 0)\
+                and check_laser(grid, *laser[0], laser[1][1]):
+
+                print(f"Found {dir=} {goal=} {i=} {row=}")
+                # print_grid(grid)
+                mirror_possibilities[laser].append(get_current_mirrors(grid))
+                break
+
+            if not can_place_mirror(grid, row + i, col):
+                continue
+
+            grid[row + i][col] = SLASH
+            find_all_mirrors(grid, laser, row + i, col, mirrors[dir, SLASH], goal // i)
+            
+            grid[row + i][col] = BACKSLASH
+            find_all_mirrors(grid, laser, row + i, col, mirrors[dir, BACKSLASH], goal // i)
+
+            grid[row + i][col] = 0
+
+    elif dir == RIGHT or dir == LEFT:
+        generator = range(1, COLS - col + 2) if dir == RIGHT else range(-1 - col, 0)
+
+        for i in generator:
+            if goal % i != 0:
+                continue
+
+            if goal == i and (col + i == COLS + 1 or col + i == 0)\
+                and check_laser(grid, *laser[0], laser[1][1]):
+
+                print(f"Found {dir=}")
+                # print_grid(grid)
+                mirror_possibilities[laser].append(get_current_mirrors(grid))
+                break
+
+            if not can_place_mirror(grid, row, col + i):
+                continue
+
+            grid[row][col + i] = SLASH
+            find_all_mirrors(grid, laser, row, col + i, mirrors[dir, SLASH], goal // i)
+            
+            grid[row][col + i] = BACKSLASH
+            find_all_mirrors(grid, laser, row, col + i, mirrors[dir, BACKSLASH], goal // i)
+
+            grid[row][col + i] = 0
+
+def generate_hypothetical_mirrors(grid: list[list]) -> None:
+    t = 0
+    for coords, laser in known_lasers.items():
+        print("=================")
+        find_all_mirrors(grid, (coords, laser), coords[0], coords[1], laser[1], laser[0])
+        t += len(mirror_possibilities[(coords, laser)])
+        print(len(mirror_possibilities[(coords, laser)]))
+
+    print(t)
+
 
 def main():
     # grid = get_test_map()
     grid = get_real_map()
-
+    global mirror_possibilities
+    mirror_possibilities = defaultdict(list)
     # tests(grid)
 
-    print(solve(grid, 1, 1))
+    # print(solve(grid, 1, 1))
     print_grid(grid)
+    # find_all_mirrors(grid, (0, 3), 0, 3, DOWN, 112)
+    # print(mirror_possibilities, len(mirror_possibilities[(0, 3)]))
+    generate_hypothetical_mirrors(grid)
 
-    print(calculate_lasers_lengths(grid))
+    # print(calculate_lasers_lengths(grid))
 
 if __name__ == "__main__":
     main()
