@@ -47,10 +47,17 @@ def calculate_lasers_lengths(grid: list[list]) -> int:
 
     return sums[0] * sums[1] * sums[2] * sums[3]
 
-# Refacto done
 def check_known_lasers(grid: list[list]) -> bool:
     for laser in known_lasers:
         if not check_laser(grid, laser[0], laser[1], known_lasers[laser][1]):
+            # print(laser, follow_light_ray(grid, laser[0], laser[1], known_lasers[laser][1]))
+            return False
+    return True
+
+def check_previous_lasers(grid: list[list], lasers: list, i: int) -> bool:
+    for j in range(i):
+        laser = lasers[i]
+        if not check_laser(grid, *laser[0], laser[1][1]):
             return False
     return True
 
@@ -64,38 +71,6 @@ def can_place_mirror(grid: list[list], row: int, col: int) -> bool:
     if col < COLS and grid[row][col + 1] != 0:
         return False
     return True
-
-# def solve(grid: list[list], row: int, col: int, changed: bool = True) -> None:
-#     if changed and check_known_lasers(grid):
-#         return True
-#     if row == ROWS and col == COLS:
-#         print("====================================")
-#         print_grid(grid)
-#         return False
-    
-#     if col == COLS:
-#         next_row = row + 1
-#         next_col = 1
-#     else:
-#         next_row = row
-#         next_col = col + 1
-
-#     if solve(grid, next_row, next_col, changed=False):
-#         return True
-
-#     if grid[row][col] != 0 or not can_place_mirror(grid, row, col):
-#         return False
-
-#     grid[row][col] = SLASH
-#     if solve(grid, next_row, next_col):
-#         return True
-
-#     grid[row][col] = BACKSLASH
-#     if solve(grid, next_row, next_col):
-#         return True
-
-#     grid[row][col] = 0
-#     return False
 
 def tests(grid: list[list[int]]) -> None:
     grid[1][2] = BACKSLASH
@@ -308,7 +283,30 @@ def check_mirrors_compatibility(grid: list[list], mrs: list[tuple[int, int, int]
             return False
     return True
 
-def solve(grid: list[list[int, str]]):
+def swap_mirrors(grid: list[list[int, str]], mrs: list[tuple[int, int, int]]) -> list[tuple]:
+    res = []
+
+    for r, c, m_type in mrs:
+        res.append((r, c, grid[r][c]))
+        grid[r][c] = m_type
+
+    return res
+
+def solve(grid: list[list[int, str]], lasers: list, i: int) -> bool:
+    if i == len(lasers):
+        return False
+
+    for mirrors_set in mirror_possibilities[lasers[i]]:
+        if check_mirrors_compatibility(grid, mirrors_set):
+            backup = swap_mirrors(grid, mirrors_set)
+
+            if check_previous_lasers(grid, lasers, i):
+                if (i == len(lasers) - 1 and check_known_lasers(grid)) or solve(grid, lasers, i + 1):
+                    return True
+
+            swap_mirrors(grid, backup)
+
+    return False      
 
 def main():
     # grid = get_test_map()
@@ -320,6 +318,10 @@ def main():
 
     print_grid(grid)
     generate_hypothetical_mirrors(grid)
+    # print(mirror_possibilities.keys())
+    solve(grid, list(mirror_possibilities.keys()), 0)
+    print_grid(grid)
+    print(check_known_lasers(grid))
 
 if __name__ == "__main__":
     main()
