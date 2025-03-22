@@ -254,10 +254,10 @@ def find_all_mirrors(grid: list[list], laser: tuple, row: int, col: int, dir: tu
                 continue
 
             grid[row + i][col] = SLASH
-            find_all_mirrors(grid, laser, row + i, col, mirrors[dir, SLASH], goal // i)
+            find_all_mirrors(grid, laser, row + i, col, mirrors[dir, SLASH], goal // abs(i))
             
             grid[row + i][col] = BACKSLASH
-            find_all_mirrors(grid, laser, row + i, col, mirrors[dir, BACKSLASH], goal // i)
+            find_all_mirrors(grid, laser, row + i, col, mirrors[dir, BACKSLASH], goal // abs(i))
 
             grid[row + i][col] = 0
 
@@ -271,7 +271,7 @@ def find_all_mirrors(grid: list[list], laser: tuple, row: int, col: int, dir: tu
             if goal == i and (col + i == COLS + 1 or col + i == 0)\
                 and check_laser(grid, *laser[0], laser[1][1]):
 
-                print(f"Found {dir=}")
+                print(f"Found {dir=} {goal=} {i=} {row=}")
                 # print_grid(grid)
                 mirror_possibilities[laser].append(get_current_mirrors(grid))
                 break
@@ -280,10 +280,10 @@ def find_all_mirrors(grid: list[list], laser: tuple, row: int, col: int, dir: tu
                 continue
 
             grid[row][col + i] = SLASH
-            find_all_mirrors(grid, laser, row, col + i, mirrors[dir, SLASH], goal // i)
+            find_all_mirrors(grid, laser, row, col + i, mirrors[dir, SLASH], goal // abs(i))
             
             grid[row][col + i] = BACKSLASH
-            find_all_mirrors(grid, laser, row, col + i, mirrors[dir, BACKSLASH], goal // i)
+            find_all_mirrors(grid, laser, row, col + i, mirrors[dir, BACKSLASH], goal // abs(i))
 
             grid[row][col + i] = 0
 
@@ -293,7 +293,7 @@ def generate_hypothetical_mirrors(grid: list[list]) -> None:
         print("=================")
         find_all_mirrors(grid, (coords, laser), coords[0], coords[1], laser[1], laser[0])
         t += len(mirror_possibilities[(coords, laser)])
-        print(len(mirror_possibilities[(coords, laser)]))
+        print(coords, len(mirror_possibilities[(coords, laser)]))
 
     print(t)
 
@@ -310,6 +310,7 @@ def main():
     # find_all_mirrors(grid, (0, 3), 0, 3, DOWN, 112)
     # print(mirror_possibilities, len(mirror_possibilities[(0, 3)]))
     generate_hypothetical_mirrors(grid)
+    # find_all_mirrors(grid, ((2, 11), (4, LEFT)), 2, 11, LEFT, 4)
 
     # print(calculate_lasers_lengths(grid))
 
